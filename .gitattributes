@@ -1,4 +1,0 @@
-# скрипты для Linux-контейнеров — всегда с LF, даже если git на Windows
-*.sh text eol=lf
-Dockerfile text eol=lf
-*.conf text eol=lf

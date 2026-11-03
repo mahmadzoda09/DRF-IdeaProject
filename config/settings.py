@@ -17,7 +17,7 @@ if _env_file.exists():
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
 
-# Локально всё работает как есть; на сервере (Docker) значения приходят из .env — см. .env.example
+# Настройки можно переопределить переменными окружения или в .env; без них — значения для разработки
 def _env_list(name, default=""):
     return [item.strip() for item in os.environ.get(name, default).split(",") if item.strip()]
 
@@ -112,7 +112,6 @@ TIME_ZONE = "Asia/Dushanbe"
 USE_I18N = True
 USE_TZ = True
 
-# в Docker статика Django (админка) — /django-static/, чтобы не пересекаться со /static/ фронтенда
 STATIC_URL = os.environ.get("DJANGO_STATIC_URL", "static/")
 STATICFILES_DIRS = [BASE_DIR / "frontend" / "static"]
 STATIC_ROOT = os.environ.get("DJANGO_STATIC_ROOT", BASE_DIR / "staticfiles")  # collectstatic — для nginx
