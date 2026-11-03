@@ -150,3 +150,4 @@ orders/      Order, OrderItem (продажа) + тесты
 frontend/    templates/index.html, static/js (api.js, app.js), static/css
 ```
 # DRF-IdeaProject
+# DRF-IdeaProject
