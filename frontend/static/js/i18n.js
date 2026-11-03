@@ -79,6 +79,7 @@ const DICT = {
   "nav.sale": ["Новая продажа", "Фурӯши нав", "New sale"],
   "nav.order": ["Продажа", "Фурӯш", "Sale"],
   "nav.purchase": ["Новая закупка", "Хариди нав", "New purchase"],
+  "nav.purchase-doc": ["Закупка", "Харид", "Purchase"],
   "nav.chat": ["Чат аптеки", "Чати дорухона", "Pharmacy chat"],
   "nav.profile": ["Мой профиль", "Профили ман", "My profile"],
   "nav.assistant": ["ИИ-ассистент", "Ёрдамчии СИ", "AI assistant"],
@@ -119,6 +120,7 @@ const DICT = {
   "sub.users": ["Учётные записи и роли сотрудников", "Ҳисобҳо ва нақшҳои кормандон", "Staff accounts and roles"],
   "sub.pharmacies": ["Филиалы аптечной сети", "Филиалҳои шабакаи дорухонаҳо", "Branches of the pharmacy network"],
   "sub.order": ["Что продано, кем и когда", "Чӣ, кай ва аз ҷониби кӣ фурӯхта шуд", "What was sold, when and by whom"],
+  "sub.purchase-doc": ["Что пришло, от кого и когда", "Чӣ, кай ва аз кӣ омад", "What arrived, when and from whom"],
   "sub.sale": ["Отсканируйте или выберите лекарства и нажмите «Продать»", "Доруҳоро скан кунед ё интихоб кунед ва «Фурӯхтан»-ро пахш кунед", "Scan or pick medicines, then press “Sell”"],
   "sub.purchase": ["Найдите лекарства, укажите количество, цену закупки и срок годности", "Доруҳоро ёбед, миқдор, нархи харид ва мӯҳлатро нишон диҳед", "Find medicines, then set quantity, purchase price and expiry date"],
   "sub.chat": ["Переписка директора и фармацевтов аптеки", "Мукотибаи директор ва фармасевтҳои дорухона", "Messages between the pharmacy's director and pharmacists"],
@@ -507,6 +509,16 @@ const DICT = {
   "pur.belowCost": ["Цена продажи ниже цены закупки", "Нархи фурӯш аз нархи харид паст аст", "Sale price is below the purchase price"],
   "pur.new": ["Новая закупка", "Хариди нав", "New purchase"],
   "pur.submit": ["Оформить закупку", "Сабти харид", "Place purchase"],
+  "pur.editTitle": ["Изменение закупки {n}", "Тағйири хариди {n}", "Edit purchase {n}"],
+  "pur.backToPurchase": ["К закупке", "Ба харид", "Back to purchase"],
+  "pur.saved": ["Закупка {n} изменена, остатки обновлены", "Хариди {n} тағйир ёфт, бақияҳо нав шуданд", "Purchase {n} updated, stock updated"],
+  "pur.delete": ["Удалить закупку", "Нест кардани харид", "Delete purchase"],
+  "pur.confirmDelete": [
+    "Удалить закупку? Её товар уйдёт со склада.",
+    "Харидро нест кунем? Моли он аз анбор хориҷ мешавад.",
+    "Delete this purchase? Its items will be removed from stock.",
+  ],
+  "pur.deleted": ["Закупка удалена", "Харид нест карда шуд", "Purchase deleted"],
   "pur.done": ["Закупка оформлена, остатки обновлены", "Харид сабт шуд, бақияҳо нав шуданд", "Purchase recorded, stock updated"],
 
   // Продажи

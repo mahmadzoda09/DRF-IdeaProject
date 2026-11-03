@@ -2260,21 +2260,68 @@ function renderPurchases() {
   ];
   if (isAdmin()) columns.splice(2, 0, { label: t("pharmacy"), html: (r) => esc(pharmacyNames[r.pharmacy]) });
 
-  const list = listView({
+  listView({
     endpoint: "/purchases/",
     filters: [{ name: "search", placeholder: t("pur.search") }, monthFilter()],
     columns,
-    onRowClick: (r) =>
-      openModal(
-        t("pur.title", { n: r.purchase_number }),
-        `<p class="muted">${dateTime(r.created_at)} · ${esc(t("pur.supplierLine", { name: r.supplier_name }))}</p>
-         ${simpleTable(
-           [t("medicine"), t("qty"), t("pur.price"), t("expireDate"), t("amount")],
-           r.items.map((i) => [esc(i.medicine_title), i.quantity, money(i.price), dateOnly(i.expire_date), money(i.price * i.quantity)])
-         )}
-         <p class="total">${esc(t("grandTotal", { sum: money(r.total_price) }))}</p>`
-      ),
+    onRowClick: (r) => (location.hash = purchaseLink(r)),
   });
+}
+
+const purchaseLink = (p) => `#/purchase-doc?id=${p.id}`;
+
+// Одна закупка (#/purchase-doc?id=5): что пришло и от кого; директор может изменить или удалить
+async function renderPurchaseDoc(params) {
+  const view = $("#view");
+  const back = `<a class="btn" href="#/purchases">${icon("arrow_back")}${esc(t("pur.back"))}</a>`;
+  setActions(back);
+  view.innerHTML = `<div class="card empty">${esc(t("loading"))}</div>`;
+  let purchase;
+  try {
+    purchase = await api.get(`/purchases/${Number(params.get("id")) || 0}/`);
+  } catch (err) {
+    view.innerHTML = `<div class="card empty error">${esc(err.message)}</div>`;
+    return;
+  }
+  if (can("purchase.create")) {
+    setActions(
+      `${back}
+       <a class="btn primary" href="#/purchase?id=${purchase.id}">${icon("edit")}${esc(t("edit"))}</a>
+       <button class="btn danger" id="delete-purchase">${esc(t("pur.delete"))}</button>`,
+      {
+        "delete-purchase": async () => {
+          if (!confirmAction(t("pur.confirmDelete"))) return;
+          try {
+            await api.del(`/purchases/${purchase.id}/`);
+            toast(t("pur.deleted"));
+            location.hash = "#/purchases";
+          } catch (err) {
+            toast(err.message, true);
+          }
+        },
+      }
+    );
+  }
+  $("#page-title").textContent = t("pur.title", { n: purchase.purchase_number });
+
+  view.innerHTML = `<div class="card panel wo-month">
+    <div class="panel-head">
+      <div class="panel-title">
+        <div class="panel-icon">${icon("inventory")}</div>
+        <div><h3>${esc(purchase.purchase_number)}</h3></div>
+      </div>
+    </div>
+    <dl class="wo-meta">
+      <div><dt>${esc(t("date"))}</dt><dd>${dateTime(purchase.created_at)}</dd></div>
+      <div><dt>${esc(t("supplier"))}</dt><dd>${esc(purchase.supplier_name)}</dd></div>
+      ${isAdmin() ? `<div><dt>${esc(t("pharmacy"))}</dt><dd>${esc(pharmacyNames[purchase.pharmacy])}</dd></div>` : ""}
+    </dl>
+    ${simpleTable(
+      [t("medicine"), { label: t("qty"), cls: "num" }, { label: t("pur.price"), cls: "num" }, t("expireDate"), { label: t("amount"), cls: "num" }],
+      purchase.items.map((i) => [`<b>${esc(i.medicine_title)}</b>`, i.quantity, money(i.price), dateOnly(i.expire_date), money(i.price * i.quantity)])
+    )}
+    <p class="total">${esc(t("grandTotal", { sum: money(purchase.total_price) }))}</p>
+  </div>`;
 }
 
 // ---------------------------------------------------------------- Поиск лекарства и корзина (продажа и закупка)
@@ -2474,19 +2521,27 @@ const cartHtml = () => `
 const removeButton = () =>
   `<button type="button" class="icon-btn remove" data-remove title="${esc(t("delete"))}">${icon("close")}</button>`;
 
-// Отдельная страница закупки (#/purchase): поиск → строки с ценой и сроком годности → итог справа
-async function renderNewPurchase() {
+// Отдельная страница закупки (#/purchase): поиск → строки с ценой и сроком годности → итог справа.
+// #/purchase?id=5 — та же страница для изменения закупки 5
+async function renderNewPurchase(params) {
   const view = $("#view");
-  setActions(`<a class="btn" href="#/purchases">${icon("arrow_back")}${esc(t("pur.back"))}</a>`);
+  const editId = Number(params.get("id")) || 0;
+  const backHref = editId ? `#/purchase-doc?id=${editId}` : "#/purchases";
+  setActions(`<a class="btn" href="${backHref}">${icon("arrow_back")}${esc(t(editId ? "pur.backToPurchase" : "pur.back"))}</a>`);
   view.innerHTML = `<div class="card empty">${esc(t("loading"))}</div>`;
 
-  let suppliers, medicines;
+  let suppliers, medicines, editing;
   try {
-    [suppliers, medicines] = await Promise.all([api.getAll("/suppliers/"), api.getAll("/medicines/", { ordering: "title" })]);
+    [suppliers, medicines, editing] = await Promise.all([
+      api.getAll("/suppliers/"),
+      api.getAll("/medicines/", { ordering: "title" }),
+      editId ? api.get(`/purchases/${editId}/`) : null,
+    ]);
   } catch (err) {
     view.innerHTML = `<div class="card empty error">${esc(err.message)}</div>`;
     return;
   }
+  if (editing) $("#page-title").textContent = t("pur.editTitle", { n: editing.purchase_number });
   if (!suppliers.length) {
     view.innerHTML = `<div class="card empty">${esc(t("pur.needSupplier"))}</div>`;
     return;
@@ -2519,8 +2574,8 @@ async function renderNewPurchase() {
         <div class="sum-row"><span>${esc(t("pur.items"))}</span><b data-count>0</b></div>
         <div class="sum-total"><span>${esc(t("pur.total"))}</span><b><span data-total>${money(0)}</span> ${currency}</b></div>
         <div class="error"></div>
-        <button type="submit" class="btn primary big">${icon("inventory")}${esc(t("pur.submit"))}</button>
-        <a class="btn" href="#/purchases">${esc(t("cancel"))}</a>
+        <button type="submit" class="btn primary big">${icon(editing ? "save" : "inventory")}${esc(t(editing ? "save" : "pur.submit"))}</button>
+        <a class="btn" href="${backHref}">${esc(t("cancel"))}</a>
       </aside>
     </form>`;
   const form = $("form", view);
@@ -2568,6 +2623,19 @@ async function renderNewPurchase() {
       : null,
   });
   form.addEventListener("input", recalc);
+  if (editing) {
+    form.elements.supplier.value = editing.supplier;
+    const byId = Object.fromEntries(medicines.map((m) => [m.id, m]));
+    editing.items.forEach((i) => {
+      const m = byId[i.medicine];
+      if (!m) return;
+      const row = cart.add(m);
+      $("[name=quantity]", row).value = i.quantity;
+      $("[name=price]", row).value = i.price;
+      $("[name=expire_date]", row).value = i.expire_date;
+    });
+    recalc();
+  }
 
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -2586,6 +2654,12 @@ async function renderNewPurchase() {
     const button = $("button[type=submit]", form);
     button.disabled = true;
     try {
+      if (editing) {
+        const purchase = await api.put(`/purchases/${editing.id}/`, payload);
+        toast(t("pur.saved", { n: purchase.purchase_number }));
+        location.hash = purchaseLink(purchase);
+        return;
+      }
       await api.post("/purchases/", payload);
       toast(t("pur.done"));
       location.hash = "#/purchases";
@@ -4541,6 +4615,7 @@ const ROUTES = [
   { path: "writeoff-doc", parent: "medicines", perm: "writeoff.view", render: renderWriteOffDoc }, // один документ списания
   { path: "purchases", icon: "shopping_cart", perm: "purchase.view", render: renderPurchases },
   { path: "purchase", parent: "purchases", perm: "purchase.create", render: renderNewPurchase }, // не в меню
+  { path: "purchase-doc", parent: "purchases", perm: "purchase.view", render: renderPurchaseDoc }, // одна закупка
   { path: "suppliers", icon: "local_shipping", perm: "supplier.view", render: renderSuppliers },
   { path: "users", icon: "badge", perm: "user.view", render: renderUsers },
   { path: "access", parent: "users", perm: "user.view", render: renderAccess }, // не в меню: кнопка «Доступ» у фармацевта
