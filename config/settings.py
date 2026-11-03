@@ -24,7 +24,8 @@ def _env_list(name, default=""):
 
 SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-change-me-in-production")
 DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
-ALLOWED_HOSTS = _env_list("DJANGO_ALLOWED_HOSTS", "*")
+# любой домен: какие домены доходят до проекта, решает nginx (server_name)
+ALLOWED_HOSTS = ["*"]
 # вход в админку Django по https через домен
 CSRF_TRUSTED_ORIGINS = _env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
 # за nginx: https определяется по заголовку, который ставит nginx
