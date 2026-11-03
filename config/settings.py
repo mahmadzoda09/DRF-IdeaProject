@@ -17,9 +17,19 @@ if _env_file.exists():
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
 GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
 
-SECRET_KEY = "django-insecure-change-me-in-production"
-DEBUG = True
-ALLOWED_HOSTS = ["*"]
+# Локально всё работает как есть; на сервере (Docker) значения приходят из .env — см. .env.example
+def _env_list(name, default=""):
+    return [item.strip() for item in os.environ.get(name, default).split(",") if item.strip()]
+
+
+SECRET_KEY = os.environ.get("DJANGO_SECRET_KEY", "django-insecure-change-me-in-production")
+DEBUG = os.environ.get("DJANGO_DEBUG", "1") == "1"
+ALLOWED_HOSTS = _env_list("DJANGO_ALLOWED_HOSTS", "*")
+# вход в админку Django по https через домен
+CSRF_TRUSTED_ORIGINS = _env_list("DJANGO_CSRF_TRUSTED_ORIGINS")
+# за nginx: https определяется по заголовку, который ставит nginx
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+USE_X_FORWARDED_HOST = True
 
 INSTALLED_APPS = [
     "daphne",  # первым: runserver работает через ASGI и понимает WebSocket (живой чат)
@@ -86,7 +96,7 @@ CHANNEL_LAYERS = (
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "NAME": os.environ.get("DJANGO_DB_PATH", BASE_DIR / "db.sqlite3"),
     }
 }
 
@@ -101,12 +111,14 @@ TIME_ZONE = "Asia/Dushanbe"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "static/"
+# в Docker статика Django (админка) — /django-static/, чтобы не пересекаться со /static/ фронтенда
+STATIC_URL = os.environ.get("DJANGO_STATIC_URL", "static/")
 STATICFILES_DIRS = [BASE_DIR / "frontend" / "static"]
+STATIC_ROOT = os.environ.get("DJANGO_STATIC_ROOT", BASE_DIR / "staticfiles")  # collectstatic — для nginx
 
-# загруженные файлы (фото и видео в чате аптеки)
+# загруженные файлы (фото и видео в чате аптеки, аватарки); на сервере их отдаёт nginx
 MEDIA_URL = "media/"
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_ROOT = os.environ.get("DJANGO_MEDIA_ROOT", BASE_DIR / "media")
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 # Наш пользователь с ролями

@@ -7,6 +7,7 @@ from django.shortcuts import redirect
 from django.urls import Resolver404, include, path, re_path, resolve
 from django.views.generic import TemplateView
 from drf_spectacular.utils import extend_schema, extend_schema_view
+from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from rest_framework.routers import DefaultRouter
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -76,6 +77,10 @@ urlpatterns = [
     path("api/rates/", RatesView.as_view(), name="rates"),
     path("api/reports/sales/", SalesReportView.as_view(), name="report-sales"),
     path("api/reports/purchases/", PurchasesReportView.as_view(), name="report-purchases"),
+    # документация: /api/ — Swagger, /api/schema/ — OpenAPI, /api/redoc/ — ReDoc (раньше корня роутера)
+    path("api/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger"),
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("api/redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
     path("api/", include(router.urls)),
     *static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT),  # фото и видео чата (в DEBUG; на проде — nginx)
     re_path(r"^(?P<path>.*)$", not_found),  # последним: всё, что не совпало выше
